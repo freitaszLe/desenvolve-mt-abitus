@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { getPessoas, type Pessoa, type PaginatedResponse, type FiltrosBusca } from '../../services/api';
+import { getPessoas, type Pessoa, type FiltrosBusca } from '../../services/api';
 import Card from '../../components/Card';
 import Navbar from '../../components/Navbar';
 import Pagination from '../../components/Pagination';
