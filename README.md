@@ -145,6 +145,6 @@ npm test
 | 📧 **Email** | `le.freitas712@gmail.com` |
 | 📞 **Telefone** | `(65) 99226-6260` |
 | 깃 **GitHub** | [@freitaszLe](https://github.com/freitaszLe) |
-| 👔 **LinkedIn** | [Leticia Freitas](linkedin.com/in/leticia-freitas-9b7647382) |
+| 👔 **LinkedIn** | [Leticia Freitas](https://www.linkedin.com/in/leticia-freitas-9b7647382/) |
 
 <br />
