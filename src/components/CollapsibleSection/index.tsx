@@ -5,7 +5,6 @@ import React from 'react';
 interface CollapsibleSectionProps {
   title: string;
   children: React.ReactNode;
-  // Adicionamos a opção de começar aberto ou fechado
   defaultOpen?: boolean;
 }
 
@@ -14,7 +13,6 @@ const CollapsibleSection = ({ title, children, defaultOpen = true }: Collapsible
 
   return (
     <section className="border border-dark-border rounded-lg overflow-hidden">
-      {/* Cabeçalho Clicável */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex justify-between items-center p-4 bg-gray-cyber hover:bg-slate-700 transition-colors"
@@ -30,7 +28,6 @@ const CollapsibleSection = ({ title, children, defaultOpen = true }: Collapsible
         </motion.div>
       </button>
 
-      {/* Conteúdo Expansível */}
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div

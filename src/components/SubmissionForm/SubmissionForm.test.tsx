@@ -2,8 +2,6 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import SubmissionForm from './index';
 
-// Mock da função global URL.createObjectURL, pois ela não existe no ambiente de teste (JSDOM)
-// Isso evita um erro nos testes
 global.URL.createObjectURL = vi.fn(() => 'mock-url-para-imagem.png');
 
 describe('SubmissionForm Component', () => {

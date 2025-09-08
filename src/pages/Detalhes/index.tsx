@@ -1,13 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getPersonById, type Pessoa } from '../../services/api.mock';
+import { getPersonById, getInformacoesAdicionais, type Pessoa, type InformacaoAdicional } from '../../services/api';
 import Navbar from '../../components/Navbar';
-import SubmissionForm, { type SubmissionFormData } from '../../components/SubmissionForm';
+import SubmissionForm from '../../components/SubmissionForm';
 import AnimatedPage from '../../components/AnimatedPage';
 import ImageModal from '../../components/ImageModal';
 import CollapsibleSection from '../../components/CollapsibleSection';
 
-// Componente auxiliar para os campos de informação, com ícone
 const InfoField = ({ icon, label, value }: { icon: JSX.Element; label: string; value: string | number | null | undefined }) => {
   if (!value && value !== 0) return null;
   return (
@@ -28,66 +27,34 @@ const DetalhesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [informacoesAdicionais, setInformacoesAdicionais] = useState<SubmissionFormData[]>([]);
+  const [informacoesAdicionais, setInformacoesAdicionais] = useState<InformacaoAdicional[]>([]);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
 
-  useEffect(() => {
-    if (!id) { 
-      setError("ID inválido."); 
-      setLoading(false); 
-      return; 
+  const carregarInformacoesAdicionais = useCallback(async (ocorrenciaId: number) => {
+    try {
+      const dados = await getInformacoesAdicionais(ocorrenciaId);
+      setInformacoesAdicionais(dados);
+    } catch (err) {
+      console.error("Falha ao carregar informações adicionais.", err);
     }
+  }, []);
+
+  useEffect(() => {
+    if (!id) { setError("ID inválido."); setLoading(false); return; }
     const carregarDadosDaPessoa = async () => {
-      try {
-        setLoading(true);
-        const pessoaId = parseInt(id, 10);
-        const dados = await getPersonById(pessoaId);
-        if (dados) { 
-          setPessoa(dados); 
-        } else { 
-          setError("Pessoa não encontrada."); 
-        }
-      } catch (err) { 
-        setError("Falha ao carregar os dados da pessoa."); 
-      } finally { 
-        setLoading(false); 
-      }
+      try { setLoading(true); const pessoaId = parseInt(id, 10); const dados = await getPersonById(pessoaId); if (dados) { setPessoa(dados); carregarInformacoesAdicionais(dados.ultimaOcorrencia.ocoId); } else { setError("Pessoa não encontrada."); } } catch (err) { setError("Falha ao carregar os dados da pessoa."); } finally { setLoading(false); }
     };
     carregarDadosDaPessoa();
-  }, [id]);
-
-  const handleSaveInfo = (novaInfo: SubmissionFormData) => {
-    setInformacoesAdicionais(infosAtuais => [...infosAtuais, novaInfo]);
-  };
+  }, [id, carregarInformacoesAdicionais]);
 
   const openGallery = (index: number) => {
     setGalleryInitialIndex(index);
     setIsGalleryOpen(true);
   };
 
-  if (loading) {
-    return (
-      <AnimatedPage>
-        <Navbar />
-        <div className="text-center mt-20">Carregando detalhes...</div>
-      </AnimatedPage>
-    )
-  }
-
-  if (error || !pessoa) {
-    return (
-      <AnimatedPage>
-        <Navbar />
-        <div className="text-red-500 text-center mt-20">
-          <p>{error || "Ocorreu um erro inesperado."}</p>
-          <button onClick={() => navigate('/')} className="mt-4 text-blue-400 hover:text-blue-300">
-            Voltar para a busca
-          </button>
-        </div>
-      </AnimatedPage>
-    );
-  }
+  if (loading) { return ( <> <Navbar /> <AnimatedPage><div className="text-center mt-20">Carregando detalhes...</div></AnimatedPage> </> ) }
+  if (error || !pessoa) { return ( <> <Navbar /> <AnimatedPage><div className="text-red-500 text-center mt-20"> <p>{error || "Ocorreu um erro."}</p> <button onClick={() => navigate('/')} className="mt-4 text-blue-400">Voltar</button> </div></AnimatedPage> </> ); }
   
   const status = pessoa.ultimaOcorrencia.dataLocalizacao || pessoa.ultimaOcorrencia.encontradoVivo ? 'LOCALIZADO' : 'DESAPARECIDO';
   const todasAsImagens = [pessoa.urlFoto, ...(pessoa.ultimaOcorrencia.listaCartaz?.map(cartaz => cartaz.urlCartaz) || [])].filter(Boolean) as string[];
@@ -96,18 +63,12 @@ const DetalhesPage = () => {
     <AnimatedPage>
       <Navbar />
       <main className="container mx-auto p-4 md:p-8">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="inline-flex items-center gap-2 text-text-muted hover:text-text-light mb-8 transition-colors"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-          </svg>
+        <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-text-muted hover:text-text-light mb-8 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
           Voltar para a Lista
         </button>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Coluna da Foto */}
           <div className="lg:w-1/3 flex-shrink-0">
             <div className="bg-dark-card border border-dark-border rounded-lg shadow-xl p-6 flex flex-col items-center text-center sticky top-24">
               <button onClick={() => openGallery(0)} className="w-full transition-transform hover:scale-105 duration-300">
@@ -120,7 +81,6 @@ const DetalhesPage = () => {
             </div>
           </div>
 
-          {/* Coluna das Informações */}
           <div className="lg:w-2/3 flex flex-col space-y-6">
             <CollapsibleSection title="Detalhes da Ocorrência" defaultOpen={true}>
               <div className="space-y-6">
@@ -160,14 +120,42 @@ const DetalhesPage = () => {
             {informacoesAdicionais.length > 0 && (
               <div className="mt-8">
                 <CollapsibleSection title="Informações Adicionais Recebidas" defaultOpen={true}>
-                  <div className="space-y-4">
-                    {informacoesAdicionais.map((info, index) => (
-                      <div key={index} className="bg-dark-bg border border-dark-border rounded-lg p-4 flex flex-col sm:flex-row gap-4 items-start">
-                        {info.fotoUrl && (<img src={info.fotoUrl} alt="Informação enviada" className="w-28 h-28 rounded-md object-cover border border-dark-border" />)}
-                        <div className="flex-1">
-                          <p className="text-text-muted"><strong className="text-text-light">Visto em:</strong> {info.dataAvistamento} | <strong className="text-text-light">Local:</strong> {info.localizacao}</p>
-                          <p className="text-text-light mt-2 italic">"{info.observacoes}"</p>
+                  <div className="space-y-6">
+                    {informacoesAdicionais.map((info) => (
+                      <div key={info.id} className="bg-dark-bg border border-dark-border rounded-lg p-6 relative">
+                        <span className="absolute top-3 right-4 text-xs font-mono text-text-muted bg-dark-card px-2 py-1 rounded-full border border-dark-border">
+                          ID: {info.id}
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <InfoField 
+                            icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-full w-full" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>}
+                            label="Data do Registro"
+                            value={new Date(info.data).toLocaleDateString()}
+                          />
                         </div>
+                        <div className="mt-6">
+                          <InfoField 
+                            icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-full w-full" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>}
+                            label="Informação Registrada"
+                            value={info.informacao}
+                          />
+                        </div>
+                        {info.anexos && info.anexos.length > 0 && (
+                          <div className="mt-6">
+                            <p className="text-text-muted text-sm font-semibold tracking-wider uppercase mb-2">Anexos Enviados</p>
+                            <div className="flex flex-wrap gap-4">
+                              {info.anexos.map((anexoUrl, index) => (
+                                <a href={anexoUrl} target="_blank" rel="noopener noreferrer" key={index}>
+                                  <img 
+                                    src={anexoUrl} 
+                                    alt={`Anexo ${index + 1}`} 
+                                    className="w-28 h-28 rounded-md object-cover border-2 border-dark-border hover:border-neon-red transition-all" 
+                                  />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -178,7 +166,7 @@ const DetalhesPage = () => {
         </div>
       </main>
 
-      {isModalOpen && (<SubmissionForm personName={pessoa.nome} onClose={() => setIsModalOpen(false)} onSave={handleSaveInfo} />)}
+      {isModalOpen && (<SubmissionForm personName={pessoa.nome} ocorrenciaId={pessoa.ultimaOcorrencia.ocoId} onClose={() => setIsModalOpen(false)} onSuccess={() => carregarInformacoesAdicionais(pessoa.ultimaOcorrencia.ocoId)} />)}
       {isGalleryOpen && (<ImageModal images={todasAsImagens} initialIndex={galleryInitialIndex} onClose={() => setIsGalleryOpen(false)} />)}
     </AnimatedPage>
   );

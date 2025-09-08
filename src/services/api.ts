@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { type SubmissionFormData } from '../components/SubmissionForm';
 
 const api = axios.create({
   baseURL: 'https://abitus-api.geia.vip/v1',
@@ -15,6 +16,7 @@ export interface Pessoa {
   nome: string;
   idade: number;
   sexo: 'MASCULINO' | 'FEMININO';
+  vivo: boolean;
   urlFoto: string;
   ultimaOcorrencia: UltimaOcorrencia;
 }
@@ -35,21 +37,48 @@ export interface FiltrosBusca {
   faixaIdadeFinal?: number;
 }
 
+export interface InformacaoAdicional {
+  id: number;
+  informacao: string;
+  data: string;
+  anexos: string[];
+}
+
+export const login = async () => {
+  try {
+    const response = await api.post('/login', {
+      login: 'admin',
+      password: 'admin'
+    });
+    const token = response.data.accessToken;
+    if (token) {
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
+    return token;
+  } catch (error) {
+    console.error("FALHA NA AUTENTICAÇÃO:", error);
+
+    delete api.defaults.headers.common['Authorization'];
+    throw error;
+  }
+};
+
 export const getPessoas = async (filtros: FiltrosBusca): Promise<PaginatedResponse<Pessoa>> => {
   const params = {
     pagina: filtros.pagina || 0,
     porPagina: filtros.porPagina || 12,
     nome: filtros.nome || '',
-    faixaIdadeInicial: 0,
-    faixaIdadeFinal: 120,
-    sexo: '',
+    status: filtros.status || '', 
+    sexo: filtros.sexo || '',     
+    faixaIdadeInicial: filtros.faixaIdadeInicial || 0,
+    faixaIdadeFinal: filtros.faixaIdadeFinal || 120,
   };
 
   try {
     const response = await api.get('/pessoas/aberto/filtro', { params });
     return response.data;
   } catch (error) {
-    console.error('Erro ao buscar pessoas na API real:', error);
+    console.error('Erro ao buscar pessoas na API:', error);
     throw error;
   }
 };
@@ -63,5 +92,43 @@ export const getPersonById = async (id: number): Promise<Pessoa> => {
     throw error;
   }
 };
+
+export const getInformacoesAdicionais = async (ocorrenciaId: number): Promise<InformacaoAdicional[]> => {
+  try {
+    const response = await api.get('/ocorrencias/informacoes-desaparecido', {
+      params: { ocorrenciaId }
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Erro ao buscar informações para ocorrência ${ocorrenciaId}:`, error);
+    throw error;
+  }
+};
+
+export const postNovaInformacao = async (ocorrenciaId: number, data: SubmissionFormData) => {
+  try {
+    const formData = new FormData();
+
+    if (data.foto && data.foto.length > 0) {
+      for (let i = 0; i < data.foto.length; i++) {
+        formData.append('files', data.foto[i]);
+      }
+    }
+
+    const informacaoCompleta = `Local: ${data.localizacao}. Observações: ${data.observacoes}`;
+    
+    formData.append('ocoId', String(ocorrenciaId));
+    formData.append('informacao', informacaoCompleta);
+    formData.append('data', data.dataAvistamento.split('/').reverse().join('-'));
+    formData.append('descricao', 'Anexo de cidadão');
+
+    const response = await api.post('/ocorrencias/informacoes-desaparecido', formData);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao enviar nova informação:', error);
+    throw error;
+  }
+};
+
 
 export default api;
