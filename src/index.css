@@ -1,7 +1,60 @@
+/* src/index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-  @apply bg-dark-bg text-text-light; 
+  @apply bg-dark-bg text-text-light;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 50%; /* Centraliza verticalmente */
+  left: 50%; /* Centraliza horizontalmente */
+  transform: translate(-50%, -50%); /* Ajuste fino para o centro exato */
+  width: 150vmax; /* Usa a maior dimensão da tela (viewport max) para garantir que cubra tudo */
+  height: 150vmax;
+
+  /* === A MUDANÇA PRINCIPAL ESTÁ AQUI === */
+  background-image:
+    /* ÚNICO GRADIENTE RADIAL para os círculos */
+    radial-gradient(circle at center, transparent 20%, rgba(229, 0, 0, 0.1) 20.5%, transparent 21%, 
+                                      transparent 40%, rgba(229, 0, 0, 0.1) 40.5%, transparent 41%, 
+                                      transparent 60%, rgba(229, 0, 0, 0.1) 60.5%, transparent 61%, 
+                                      transparent 80%, rgba(229, 0, 0, 0.1) 80.5%, transparent 81%),
+    /* Gradiente linear para as linhas da cruz */
+    linear-gradient(to right, rgba(229, 0, 0, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(229, 0, 0, 0.1) 1px, transparent 1px);
+
+  /* APENAS UM background-size para tudo */
+  background-size: 100% 100%, 50px 50px, 50px 50px; 
+
+  pointer-events: none;
+  z-index: -2;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 50vmax; /* Também ajustado para vh para consistência */
+  height: 2px;
+  background: linear-gradient(to right, transparent, rgba(229, 0, 0, 0.7));
+  transform-origin: left center;
+  animation: radar-sweep 5s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes radar-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
