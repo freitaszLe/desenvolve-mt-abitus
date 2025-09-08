@@ -6,8 +6,9 @@ import SubmissionForm from '../../components/SubmissionForm';
 import AnimatedPage from '../../components/AnimatedPage';
 import ImageModal from '../../components/ImageModal';
 import CollapsibleSection from '../../components/CollapsibleSection';
+import type { ReactElement } from "react";
 
-const InfoField = ({ icon, label, value }: { icon: JSX.Element; label: string; value: string | number | null | undefined }) => {
+const InfoField = ({ icon, label, value }: { icon: ReactElement; label: string; value: string | number | null | undefined }) => {
   if (!value && value !== 0) return null;
   return (
     <div className="flex items-start gap-4">

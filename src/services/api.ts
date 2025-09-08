@@ -5,12 +5,27 @@ const api = axios.create({
   baseURL: 'https://abitus-api.geia.vip/v1',
 });
 
+interface OcorrenciaEntrevDesapDTO {
+  informacao: string | null;
+  vestimentasDesaparecido: string | null;
+}
+
+interface OcorrenciaCartazDTO {
+  urlCartaz: string;
+  tipoCartaz: string;
+}
+
 interface UltimaOcorrencia {
   dtDesaparecimento: string;
   dataLocalizacao: string | null;
   encontradoVivo: boolean;
+  localDesaparecimentoConcat: string | null;
+  ocorrenciaEntrevDesapDTO: OcorrenciaEntrevDesapDTO | null;
+  listaCartaz: OcorrenciaCartazDTO[] | null;
+  ocoId: number;
   status?: 'DESAPARECIDO' | 'LOCALIZADO'; 
 }
+
 export interface Pessoa {
   id: number;
   nome: string;
@@ -105,24 +120,19 @@ export const getInformacoesAdicionais = async (ocorrenciaId: number): Promise<In
   }
 };
 
-export const postNovaInformacao = async (ocorrenciaId: number, data: SubmissionFormData) => {
+export const postNovaInformacao = async (ocorrenciaId: number, data: SubmissionFormData, formData: FormData) => {
   try {
-    const formData = new FormData();
-
-    if (data.foto && data.foto.length > 0) {
-      for (let i = 0; i < data.foto.length; i++) {
-        formData.append('files', data.foto[i]);
-      }
-    }
-
     const informacaoCompleta = `Local: ${data.localizacao}. Observações: ${data.observacoes}`;
     
-    formData.append('ocoId', String(ocorrenciaId));
-    formData.append('informacao', informacaoCompleta);
-    formData.append('data', data.dataAvistamento.split('/').reverse().join('-'));
-    formData.append('descricao', 'Anexo de cidadão');
+    const params = {
+      ocoId: ocorrenciaId,
+      informacao: informacaoCompleta,
+      data: data.dataAvistamento.split('/').reverse().join('-'),
+      descricao: 'Anexo de cidadão',
+    };
 
-    const response = await api.post('/ocorrencias/informacoes-desaparecido', formData);
+    // A chamada agora envia o formData que veio pronto do componente
+    const response = await api.post('/ocorrencias/informacoes-desaparecido', formData, { params });
     return response.data;
   } catch (error) {
     console.error('Erro ao enviar nova informação:', error);
